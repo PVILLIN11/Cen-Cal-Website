@@ -6,8 +6,8 @@ mobileToggle.addEventListener('click', () => {
     navLinks.classList.toggle('active');
 });
 
-const navItems = document.querySelectorAll('.nav-links a');
-navItems.forEach(item => {
+// Close mobile menu when clicking a link
+document.querySelectorAll('.nav-links a').forEach(item => {
     item.addEventListener('click', () => {
         navLinks.classList.remove('active');
     });
@@ -29,7 +29,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Gallery Carousel Functionality
+// Gallery Carousel Class
 class Carousel {
     constructor(element) {
         this.carousel = element;
@@ -37,10 +37,8 @@ class Carousel {
         this.items = Array.from(element.querySelectorAll('.carousel-item'));
         this.prevBtn = element.querySelector('.prev');
         this.nextBtn = element.querySelector('.next');
-
         this.currentIndex = 0;
         this.itemsToShow = this.getItemsToShow();
-
         this.init();
     }
 
@@ -53,11 +51,10 @@ class Carousel {
 
     init() {
         this.updateCarousel();
-
         this.prevBtn.addEventListener('click', () => this.prev());
         this.nextBtn.addEventListener('click', () => this.next());
 
-        // Update on window resize
+        // Handle window resize
         let resizeTimeout;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
@@ -80,10 +77,7 @@ class Carousel {
         const itemWidth = this.items[0].offsetWidth;
         const gap = 20;
         const offset = -(this.currentIndex * (itemWidth + gap));
-
         this.track.style.transform = `translateX(${offset}px)`;
-
-        // Update button states
         this.prevBtn.disabled = this.currentIndex === 0;
         this.nextBtn.disabled = this.currentIndex >= this.getMaxIndex();
     }
@@ -103,236 +97,176 @@ class Carousel {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const carousels = document.querySelectorAll('.gallery-carousel');
-    carousels.forEach(carousel => new Carousel(carousel));
-});
-// Initialize lightbox
-document.addEventListener('DOMContentLoaded', () => {
-    initLightbox();
-});
-
 // Lightbox Functionality
-function initLightbox() {
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = document.getElementById('lightbox-img');
-    const lightboxClose = document.querySelector('.lightbox-close');
-    const prevBtn = document.querySelector('.lightbox-nav.prev-img');
-    const nextBtn = document.querySelector('.lightbox-nav.next-img');
-    const caption = document.querySelector('.lightbox-caption');
-
-    let currentImages = [];
-    let currentIndex = 0;
-    let isZoomed = false;
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    let scrollLeft = 0;
-    let scrollTop = 0;
-
-    // Get all clickable images
-    function updateImageList() {
-        currentImages = Array.from(document.querySelectorAll('.carousel-item img, .carousel-item .image-placeholder'));
+class Lightbox {
+    constructor() {
+        this.lightbox = document.getElementById('lightbox');
+        this.lightboxImg = document.getElementById('lightbox-img');
+        this.lightboxClose = document.querySelector('.lightbox-close');
+        this.prevBtn = document.querySelector('.lightbox-nav.prev-img');
+        this.nextBtn = document.querySelector('.lightbox-nav.next-img');
+        this.currentImages = [];
+        this.currentIndex = 0;
+        this.isZoomed = false;
+        this.isDragging = false;
+        this.translateX = 0;
+        this.translateY = 0;
+        this.lastX = 0;
+        this.lastY = 0;
+        this.init();
     }
 
-    // Open lightbox when clicking on carousel items
-    document.addEventListener('click', (e) => {
-        const carouselItem = e.target.closest('.carousel-item');
-        if (carouselItem) {
-            updateImageList();
-            const clickedElement = carouselItem.querySelector('img') || carouselItem.querySelector('.image-placeholder');
-            currentIndex = currentImages.indexOf(clickedElement);
-
-            if (currentIndex !== -1) {
-                openLightbox(clickedElement);
+    init() {
+        // Click on carousel items to open lightbox
+        document.addEventListener('click', (e) => {
+            const carouselItem = e.target.closest('.carousel-item');
+            if (carouselItem) {
+                this.updateImageList();
+                const clickedImg = carouselItem.querySelector('img');
+                this.currentIndex = this.currentImages.indexOf(clickedImg);
+                if (this.currentIndex !== -1) {
+                    this.open(clickedImg);
+                }
             }
+        });
+
+        // Close lightbox
+        this.lightboxClose.addEventListener('click', () => this.close());
+        this.lightbox.addEventListener('click', (e) => {
+            if (e.target === this.lightbox) this.close();
+        });
+
+        // Navigation
+        this.prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showPrev();
+        });
+        this.nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showNext();
+        });
+
+        // Zoom functionality
+        this.lightboxImg.addEventListener('click', (e) => this.toggleZoom(e));
+
+        // Pan functionality
+        this.lightboxImg.addEventListener('mousedown', (e) => this.startPan(e));
+        document.addEventListener('mousemove', (e) => this.pan(e));
+        document.addEventListener('mouseup', () => this.endPan());
+
+        // Touch support
+        this.lightboxImg.addEventListener('touchstart', (e) => this.startPan(e.touches[0]));
+        this.lightboxImg.addEventListener('touchmove', (e) => {
+            if (this.isDragging && this.isZoomed) {
+                e.preventDefault();
+                this.pan(e.touches[0]);
+            }
+        });
+        this.lightboxImg.addEventListener('touchend', () => this.endPan());
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!this.lightbox.classList.contains('active')) return;
+            if (e.key === 'Escape') this.close();
+            if (e.key === 'ArrowLeft') this.showPrev();
+            if (e.key === 'ArrowRight') this.showNext();
+        });
+    }
+
+    updateImageList() {
+        this.currentImages = Array.from(document.querySelectorAll('.carousel-item img'));
+    }
+
+    open(img) {
+        this.lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        this.lightboxImg.src = img.src;
+        this.lightboxImg.alt = img.alt || 'Project image';
+        this.updateNavButtons();
+        this.resetZoom();
+    }
+
+    close() {
+        this.lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+        this.resetZoom();
+    }
+
+    updateNavButtons() {
+        this.prevBtn.disabled = this.currentIndex === 0;
+        this.nextBtn.disabled = this.currentIndex === this.currentImages.length - 1;
+    }
+
+    showPrev() {
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            this.open(this.currentImages[this.currentIndex]);
         }
-    });
-
-    function openLightbox(element) {
-        lightbox.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Prevent scrolling
-
-        if (element.tagName === 'IMG') {
-            lightboxImg.src = element.src;
-            lightboxImg.alt = element.alt || 'Project image';
-        } else {
-            // Handle placeholder - create a temporary canvas representation
-            lightboxImg.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="%23e8e8e8"/><text x="50%" y="50%" font-family="Arial" font-size="18" fill="%23999" text-anchor="middle" dominant-baseline="middle">Project Photo Placeholder</text></svg>'
-            );
-            lightboxImg.alt = 'Project placeholder';
-        }
-
-        updateNavigationButtons();
-        isZoomed = false;
-        lightboxImg.classList.remove('zoomed', 'panning');
     }
 
-    function closeLightbox() {
-        lightbox.classList.remove('active');
-        document.body.style.overflow = ''; // Restore scrolling
-        isZoomed = false;
-        lightboxImg.classList.remove('zoomed', 'panning');
-        lightboxImg.style.transform = '';
-        translateX = 0;
-        translateY = 0;
-    }
-
-    function updateNavigationButtons() {
-        prevBtn.disabled = currentIndex === 0;
-        nextBtn.disabled = currentIndex === currentImages.length - 1;
-    }
-
-    function showPrevImage() {
-        if (currentIndex > 0) {
-            currentIndex--;
-            resetZoom();
-            openLightbox(currentImages[currentIndex]);
+    showNext() {
+        if (this.currentIndex < this.currentImages.length - 1) {
+            this.currentIndex++;
+            this.open(this.currentImages[this.currentIndex]);
         }
     }
 
-    function showNextImage() {
-        if (currentIndex < currentImages.length - 1) {
-            currentIndex++;
-            resetZoom();
-            openLightbox(currentImages[currentIndex]);
-        }
-    }
-
-    // Zoom functionality
-    lightboxImg.addEventListener('click', (e) => {
-        if (!isZoomed) {
-            isZoomed = true;
-            lightboxImg.classList.add('zoomed');
-
-            // Calculate zoom position based on click
-            const rect = lightboxImg.getBoundingClientRect();
+    toggleZoom(e) {
+        if (!this.isZoomed) {
+            this.isZoomed = true;
+            this.lightboxImg.classList.add('zoomed');
+            const rect = this.lightboxImg.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width) * 100;
             const y = ((e.clientY - rect.top) / rect.height) * 100;
-            lightboxImg.style.transformOrigin = `${x}% ${y}%`;
+            this.lightboxImg.style.transformOrigin = `${x}% ${y}%`;
         } else {
-            isZoomed = false;
-            lightboxImg.classList.remove('zoomed', 'panning');
-            lightboxImg.style.transform = '';
-            translateX = 0;
-            translateY = 0;
+            this.resetZoom();
         }
-    });
+    }
 
-    // Pan functionality when zoomed
-    let lastX = 0;
-    let lastY = 0;
-    let translateX = 0;
-    let translateY = 0;
-
-    lightboxImg.addEventListener('mousedown', (e) => {
-        if (isZoomed) {
-            isDragging = true;
-            lightboxImg.classList.add('panning');
-            lastX = e.clientX;
-            lastY = e.clientY;
-            e.preventDefault();
+    startPan(e) {
+        if (this.isZoomed) {
+            this.isDragging = true;
+            this.lightboxImg.classList.add('panning');
+            this.lastX = e.clientX;
+            this.lastY = e.clientY;
+            if (e.preventDefault) e.preventDefault();
         }
-    });
+    }
 
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging && isZoomed) {
-            const deltaX = e.clientX - lastX;
-            const deltaY = e.clientY - lastY;
-
-            translateX += deltaX;
-            translateY += deltaY;
-
-            lightboxImg.style.transform = `scale(2) translate(${translateX / 2}px, ${translateY / 2}px)`;
-
-            lastX = e.clientX;
-            lastY = e.clientY;
+    pan(e) {
+        if (this.isDragging && this.isZoomed) {
+            const deltaX = e.clientX - this.lastX;
+            const deltaY = e.clientY - this.lastY;
+            this.translateX += deltaX;
+            this.translateY += deltaY;
+            this.lightboxImg.style.transform = `scale(2) translate(${this.translateX / 2}px, ${this.translateY / 2}px)`;
+            this.lastX = e.clientX;
+            this.lastY = e.clientY;
         }
-    });
+    }
 
-    document.addEventListener('mouseup', () => {
-        if (isDragging) {
-            isDragging = false;
-            lightboxImg.classList.remove('panning');
+    endPan() {
+        if (this.isDragging) {
+            this.isDragging = false;
+            this.lightboxImg.classList.remove('panning');
         }
-    });
+    }
 
-    // Touch support for mobile
-    let touchStartX = 0;
-    let touchStartY = 0;
-
-    lightboxImg.addEventListener('touchstart', (e) => {
-        if (isZoomed) {
-            isDragging = true;
-            const touch = e.touches[0];
-            lastX = touch.clientX;
-            lastY = touch.clientY;
-        }
-    });
-
-    lightboxImg.addEventListener('touchmove', (e) => {
-        if (isDragging && isZoomed) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const deltaX = touch.clientX - lastX;
-            const deltaY = touch.clientY - lastY;
-
-            translateX += deltaX;
-            translateY += deltaY;
-
-            lightboxImg.style.transform = `scale(2) translate(${translateX / 2}px, ${translateY / 2}px)`;
-
-            lastX = touch.clientX;
-            lastY = touch.clientY;
-        }
-    });
-
-    lightboxImg.addEventListener('touchend', () => {
-        isDragging = false;
-    });
-
-    // Event listeners
-    lightboxClose.addEventListener('click', closeLightbox);
-    prevBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showPrevImage();
-    });
-    nextBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showNextImage();
-    });
-
-    // Close on background click
-    lightbox.addEventListener('click', (e) => {
-        if (e.target === lightbox) {
-            closeLightbox();
-        }
-    });
-
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-        if (!lightbox.classList.contains('active')) return;
-
-        switch (e.key) {
-            case 'Escape':
-                closeLightbox();
-                break;
-            case 'ArrowLeft':
-                showPrevImage();
-                break;
-            case 'ArrowRight':
-                showNextImage();
-                break;
-        }
-    });
-
-    // Reset zoom and pan when changing images
-    function resetZoom() {
-        translateX = 0;
-        translateY = 0;
-        lightboxImg.style.transform = '';
-        isZoomed = false;
-        lightboxImg.classList.remove('zoomed', 'panning');
+    resetZoom() {
+        this.translateX = 0;
+        this.translateY = 0;
+        this.isZoomed = false;
+        this.lightboxImg.classList.remove('zoomed', 'panning');
+        this.lightboxImg.style.transform = '';
     }
 }
+
+// Initialize everything when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize all carousels
+    document.querySelectorAll('.gallery-carousel').forEach(carousel => new Carousel(carousel));
+
+    // Initialize lightbox
+    new Lightbox();
+});
