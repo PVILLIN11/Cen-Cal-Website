@@ -97,8 +97,8 @@ h2 {
 /* Hero Section */
 .hero {
     margin-top: 65px;
-    position: relative;
-    height: 60vh;
+    position: center;
+    height: 85vh;
     min-height: 600px;
     overflow: hidden;
 }
