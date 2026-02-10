@@ -97,7 +97,7 @@ h2 {
 /* Hero Section */
 .hero {
     background-color: #ffffff;
-    padding: 60px 20px;
+    padding: 80px 20px 40px 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -106,11 +106,12 @@ h2 {
 
 .hero-content {
     max-width: 100%;
+    width: 100%;
 }
 
 .hero-logo {
     max-width: 1400px;
-    width: 100%;
+    width: 95%;
     height: auto;
 }
 
@@ -639,13 +640,7 @@ h2 {
     }
 
     .hero {
-        padding: 80px 20px;
-    }
-
-    .hero-logo {
-        max-width: 100%;
-        width: 100%;
-        height: auto;
+        padding: 80px 15px 30px 15px;
     }
 
     .hero-subtitle {
@@ -714,13 +709,7 @@ h2 {
     }
 
     .hero {
-        padding: 60px 20px;
-    }
-
-    .hero-logo {
-        max-width: 100%;
-        width: 100%;
-        height: auto;
+        padding: 70px 10px 25px 10px;
     }
 
     .hero-subtitle {
