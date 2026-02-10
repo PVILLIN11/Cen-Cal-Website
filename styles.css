@@ -645,6 +645,7 @@ h2 {
     .hero-logo {
         max-width: 90%;
         width: 90%;
+        height: 700px;
     }
 
     .hero-subtitle {
@@ -719,6 +720,7 @@ h2 {
     .hero-logo {
         max-width: 95%;
         width: 95%;
+        height: 600px;
     }
 
     .hero-subtitle {
