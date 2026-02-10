@@ -109,9 +109,9 @@ h2 {
 }
 
 .hero-logo {
-    max-width: 1200px;
+    max-width: 1400px;
     width: 100%;
-    height: auto;
+    height: 700px;
 }
 
 .hero-subtitle {
@@ -124,7 +124,7 @@ h2 {
 
 /* Intro Section */
 .intro {
-    padding: 100px 0;
+    padding: 30px 0;
     background-color: #fafafa;
 }
 
