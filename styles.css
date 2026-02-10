@@ -643,7 +643,8 @@ h2 {
     }
 
     .hero-logo {
-        max-width: 700px;
+        max-width: 1000px;
+        height: 500px;
     }
 
     .hero-subtitle {
@@ -716,7 +717,8 @@ h2 {
     }
 
     .hero-logo {
-        max-width: 700px;
+        max-width: 1000px;
+        height: 500px;
     }
 
     .hero-subtitle {
