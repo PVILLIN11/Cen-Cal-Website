@@ -262,11 +262,9 @@ class Lightbox {
     }
 }
 
-// Initialize everything when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize all carousels
+
     document.querySelectorAll('.gallery-carousel').forEach(carousel => new Carousel(carousel));
 
-    // Initialize lightbox
     new Lightbox();
 });
